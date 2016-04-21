@@ -38,6 +38,8 @@ namespace CheckAsRunForRoundingError
             // Set the Text for Default directory
             tbDirectory.Text = CheckAsRunForRoundingError.Properties.Settings.Default.DefaultDir;
             tbSearch.Text = CheckAsRunForRoundingError.Properties.Settings.Default.Search;
+            DateTime saveNow = DateTime.Now;
+            numDate.Value = saveNow.Day;
         }
         #endregion
 
@@ -71,31 +73,38 @@ namespace CheckAsRunForRoundingError
 
         private void btnStart_Click(object sender, EventArgs e)
         {
-            // check if day matches date
-            DateTime saveNow = DateTime.Now;
-            if (!(numDate.Value == saveNow.Day))
-                if (MessageBox.Show("Date Doesn't match today, do you want to continue?",
-                    "We don't want to check file, while it's being written to by As Run service.", MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
-                    return;
-            // Send Message of checking Directory
-            richTextBox1.Text = "Now checking " + tbDirectory.Text + " for .txt Files not named " + lbFile.Text +"\r\n=====================================\r\n\r\n";
-            btnSave.Enabled = true;
-            // check for files in the folders
-            DirectoryInfo di = new DirectoryInfo(tbDirectory.Text);
-            var directories= di.GetFiles("*.txt", SearchOption.AllDirectories);
-
-            foreach (FileInfo d in directories)
+            try
             {
-                if (d.Name == lbFile.Text)
+                // check if day matches date
+                DateTime saveNow = DateTime.Now;
+                if (!(numDate.Value == saveNow.Day))
+                    if (MessageBox.Show("Date Doesn't match today, do you want to continue?",
+                        "We don't want to check file, while it's being written to by As Run service.", MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.No)
+                        return;
+                // Send Message of checking Directory
+                richTextBox1.Text = "Now checking " + tbDirectory.Text + " for .txt Files not named " + lbFile.Text + "\r\n=====================================\r\n\r\n";
+                btnSave.Enabled = true;
+                // check for files in the folders
+                DirectoryInfo di = new DirectoryInfo(tbDirectory.Text);
+                var directories = di.GetFiles("*.txt", SearchOption.AllDirectories);
+
+                foreach (FileInfo d in directories)
                 {
-                    richTextBox1.Text += "Skipping file named " + d.FullName + "\r\n";
-                    continue;
+                    if (d.Name == lbFile.Text)
+                    {
+                        richTextBox1.Text += "Skipping file named " + d.FullName + "\r\n";
+                        continue;
+                    }
+                    // report hh:mm out of order
+                    if (radioButton1.Checked == true) ZProcessDFile(d.FullName);
+                    // search for phrase
+                    else ZSearchDFile(d.FullName);
                 }
-                // report hh:mm out of order
-                if (radioButton1.Checked == true) ZProcessDFile(d.FullName);
-                // search for phrase
-                else ZSearchDFile(d.FullName);
+            }
+            catch (Exception  err)
+            {
+                richTextBox1.Text = "ERROR: " + err.Message + " at " + err.TargetSite;
             }
         }
 
